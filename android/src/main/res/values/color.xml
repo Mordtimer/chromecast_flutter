@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Second One -->
+    <color name="cast_expanded_controller_ad_break_marker_color">#1AFFFFFF</color>
+    <color name="cast_expanded_controller_ad_container_white_stripe_color">#1AFFFFFF</color>
+    <color name="cast_expanded_controller_ad_in_progress_text_color">#FFFFFF</color>
+    <!-- First one -->
+    <color name="cast_expanded_controller_ad_label_background_color">#1AFFFFFF</color>
+    <color name="cast_expanded_controller_ad_label_text_color">#FFFFFF</color>
+    <color name="cast_expanded_controller_background_color">#000000</color>
+    <color name="cast_expanded_controller_live_indicator_color">#D0021B</color>
+    <color name="cast_expanded_controller_loading_indicator_color">#FFFFFFFF</color>
+    <color name="cast_expanded_controller_progress_text_color">#E5FFFFFF</color>
+    <color name="cast_expanded_controller_seek_bar_progress_background_tint_color">#46FFFFFF</color>
+    <color name="cast_expanded_controller_text_color">#FFFFFF</color>
+    <color name="cast_intro_overlay_background_color">#CC000000</color>
+    <color name="cast_intro_overlay_button_background_color">#BB33B5E5</color>
+    <color name="cast_libraries_material_featurehighlight_outer_highlight_default_color">#2196F3
+    </color>
+    <color name="cast_libraries_material_featurehighlight_text_body_color">#FFFFFFFF</color>
+    <color name="cast_libraries_material_featurehighlight_text_header_color">#FFFFFFFF</color>
+    <color name="cast_mini_controller_loading_indicator_color">#000000</color>
+    <color name="cast_seekbar_progress_thumb_color">#D0021B</color>
+    <color name="cast_seekbar_secondary_progress_color">#A6FFFFFF</color>
+    <color name="cast_seekbar_tooltip_background_color">#e6616161</color>
+    <color name="cast_seekbar_unseekable_progress_color">#4DFFFFFF</color>
+</resources>

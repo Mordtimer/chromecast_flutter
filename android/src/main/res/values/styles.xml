@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <style name="ChromecastCustomStyle" parent="Theme.AppCompat.NoActionBar">
+        <item name="android:colorAccent">@color/cast_expanded_controller_ad_break_marker_color
+        </item>
+    </style>
+</resources>

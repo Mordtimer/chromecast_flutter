@@ -32,7 +32,7 @@ android {
         main.java.srcDirs += 'src/main/kotlin'
     }
     defaultConfig {
-        minSdkVersion 25
+        minSdkVersion 21
     }
     lintOptions {
         disable 'InvalidPackage'
@@ -42,6 +42,7 @@ android {
 dependencies {
     implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk7:$kotlinVersion"
     //ChromeCast dependencies
-    implementation 'com.google.android.material:material:1.6.1'
-    implementation 'com.google.android.gms:play-services-cast-framework:21.0.1'
+    implementation 'com.google.android.gms:play-services-cast-framework:20.0.0'
+    implementation 'com.google.android.exoplayer:extension-cast:2.15.1'
+
 }

@@ -71,26 +71,32 @@ class ChromeCastController(
     }
 
     private fun buildMediaInfo(args: Map<*, *>): MediaInfo {
-        val url = args["url"] as String
-        val imageUrl = args["imageUrl"] as String?
-        val album = args["album"] as String
-        val title = args["title"] as String
+        val url = args["url"] as? String ?: ""
+        val title = args["title"] as? String ?: ""
+        val subtitle = args["subtitle"] as? String ?: ""
+        val imageUrl = args["image"] as? String ?: ""
+        val contentType = args["contentType"] as? String ?: "audio/mpeg"
+        val liveStream = args["live"] as? Boolean ?: false
 
-        val mediaType = when (args["type"] as Int) {
-            0 -> MediaMetadata.MEDIA_TYPE_MUSIC_TRACK
-            1 -> MediaMetadata.MEDIA_TYPE_MOVIE
-            else -> throw Exception("Undefined media type.")
-        }
+        val movieMetadata = MediaMetadata(MediaMetadata.MEDIA_TYPE_MOVIE)
+        val streamType =
+            if (liveStream) MediaInfo.STREAM_TYPE_LIVE else MediaInfo.STREAM_TYPE_BUFFERED
 
-        val metadata = MediaMetadata(mediaType);
-        metadata.putString(MediaMetadata.KEY_ALBUM_TITLE, album)
-        metadata.putString(MediaMetadata.KEY_ARTIST, title)
+        movieMetadata.putString(MediaMetadata.KEY_TITLE, title)
+        movieMetadata.putString(MediaMetadata.KEY_SUBTITLE, subtitle)
+        movieMetadata.addImage(WebImage(Uri.parse(imageUrl)))
 
-        if (imageUrl != null) {
-            metadata.addImage(WebImage(Uri.parse(imageUrl)));
-        }
+        return MediaInfo
+            .Builder(url)
+            .setStreamType(streamType)
+            .setContentType(contentType)
+            .setMetadata(movieMetadata)
+            .build()
+//        val queueItem: MediaQueueItem = MediaQueueItem.Builder(mediaInfo)
+//            .setAutoplay(true)
+//            .setPreloadTime(20.0)
+//            .build()
 
-        return MediaInfo.Builder(url).setMetadata(metadata).build()
     }
 
 
@@ -121,15 +127,15 @@ class ChromeCastController(
 
     private fun loadMediaQueue(args: Any?) {
         if (args is Map<*, *>) {
-            val children = args["children"] as ArrayList<Map<*, *>>?
-            val initialIndex = args["initialIndex"] as Int
+            val children = args["children"] as? ArrayList<Map<*, *>>
+            val initialIndex = args["initialIndex"] as? Int
 
-            val repeatMode = when (args["repeatMode"] as Int) {
+            val repeatMode = when (args["repeatMode"] as? Int) {
                 0 -> MediaStatus.REPEAT_MODE_REPEAT_OFF
                 1 -> MediaStatus.REPEAT_MODE_REPEAT_ALL
                 2 -> MediaStatus.REPEAT_MODE_REPEAT_SINGLE
                 3 -> MediaStatus.REPEAT_MODE_REPEAT_ALL_AND_SHUFFLE
-                else -> throw Exception("Undefined repeat mode.")
+                else -> MediaStatus.REPEAT_MODE_REPEAT_OFF
             }
 
             val queue: ArrayList<MediaQueueItem> = arrayListOf()
@@ -142,7 +148,12 @@ class ChromeCastController(
             }
 
             val request =
-                remoteMediaClient?.queueLoad(queue.toTypedArray(), initialIndex, repeatMode, null);
+                remoteMediaClient?.queueLoad(
+                    queue.toTypedArray(),
+                    initialIndex ?: 0,
+                    repeatMode,
+                    null
+                );
             request?.addStatusListener(this)
 
             remoteMediaClient?.removeProgressListener(progressListener)

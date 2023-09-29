@@ -121,7 +121,7 @@ class ChromeCastController(
 
     private fun loadMediaQueue(args: Any?) {
         if (args is Map<*, *>) {
-            val children = args["children"] as ArrayList<Map<*, *>>
+            val children = args["children"] as ArrayList<Map<*, *>>?
             val initialIndex = args["initialIndex"] as Int
 
             val repeatMode = when (args["repeatMode"] as Int) {
@@ -134,9 +134,11 @@ class ChromeCastController(
 
             val queue: ArrayList<MediaQueueItem> = arrayListOf()
 
-            for (item in children) {
-                val mediaInfo = buildMediaInfo(item)
-                queue.add(MediaQueueItem.Builder(mediaInfo).build())
+            if (children != null) {
+                for (item in children) {
+                    val mediaInfo = buildMediaInfo(item)
+                    queue.add(MediaQueueItem.Builder(mediaInfo).build())
+                }
             }
 
             val request =

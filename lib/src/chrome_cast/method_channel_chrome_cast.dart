@@ -3,10 +3,11 @@ import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:flutter_cast_video/src/chrome_cast/chrome_cast_event.dart';
 import 'package:flutter_cast_video/src/chrome_cast/chrome_cast_platform.dart';
 import 'package:stream_transform/stream_transform.dart';
 
+import '../models/chromecast_event.dart';
+import '../models/chromecast_media_item_event.dart';
 import '../models/chromecast_queue_model.dart';
 
 /// An implementation of [ChromeCastPlatform] that uses [MethodChannel] to communicate with the native code.
@@ -30,6 +31,11 @@ class MethodChannelChromeCast extends ChromeCastPlatform {
   // Returns a filtered view of the events in the _controller, by id.
   Stream<ChromeCastEvent> _events(int? id) =>
       _eventStreamController.stream.where((event) => event.id == id);
+
+  @override
+  Stream<CastMediaItemEvent> onMediaItemEvent({int? id}) {
+    return _events(id).whereType<CastMediaItemEvent>();
+  }
 
   @override
   Future<void> init(int id) {
@@ -73,12 +79,9 @@ class MethodChannelChromeCast extends ChromeCastPlatform {
   }
 
   @override
-  Stream<PlayerStatusDidUpdatedEvent> onPlayerStatusUpdated({int? id}) {
-    return _events(id).whereType<PlayerStatusDidUpdatedEvent>();
-  }
-
-  @override
-  Future<void> loadMedia(String url, String title, String subtitle, String image, {bool? live, required int id}) {
+  Future<void> loadMedia(
+      String url, String title, String subtitle, String image,
+      {bool? live, required int id}) {
     final Map<String, dynamic> args = {
       'url': url,
       'title': title,
@@ -88,14 +91,11 @@ class MethodChannelChromeCast extends ChromeCastPlatform {
     };
     return channel(id)!.invokeMethod<void>('chromeCast#loadMedia', args);
   }
-  
-  @override
-  Future<void> loadQueueMedia(
-    ChromecastQueueModel queue,
-    {required int id}
-  ) {
 
-    return channel(id)!.invokeMethod<void>('chromeCast#loadQueueMedia', queue.toJson());
+  @override
+  Future<void> loadQueueMedia(ChromecastQueueModel queue, {required int id}) {
+    return channel(id)!
+        .invokeMethod<void>('chromeCast#loadQueueMedia', queue.toJson());
   }
 
   @override
@@ -124,8 +124,9 @@ class MethodChannelChromeCast extends ChromeCastPlatform {
   }
 
   @override
-  Future<Map<dynamic,dynamic>?> getMediaInfo({required int id}) async {
-    return (await channel(id)!.invokeMethod<Map<dynamic,dynamic>?>('chromeCast#getMediaInfo'));
+  Future<Map<dynamic, dynamic>?> getMediaInfo({required int id}) async {
+    return (await channel(id)!
+        .invokeMethod<Map<dynamic, dynamic>?>('chromeCast#getMediaInfo'));
   }
 
   @override
@@ -185,13 +186,17 @@ class MethodChannelChromeCast extends ChromeCastPlatform {
         _eventStreamController
             .add(RequestDidFailEvent(id, call.arguments['error']));
         break;
-      case 'chromeCast#didPlayerStatusUpdated':
-        var arg = 0;
-        if(call.arguments is int?)
-          arg = call.arguments ?? 0;
-
-        _eventStreamController
-            .add(PlayerStatusDidUpdatedEvent(id, arg));
+      case 'chromeCast#mediaItemEvent':
+        _eventStreamController.add(CastMediaItemEvent(
+          id: id,
+          isPlaying: call.arguments['isPlaying'],
+          isPaused: call.arguments['isPaused'],
+          isBuffering: call.arguments['isBuffering'],
+          index: call.arguments['index'],
+          volume: call.arguments['volume'],
+          position: call.arguments['position'],
+          duration: call.arguments['duration'],
+        ));
         break;
       default:
         throw MissingPluginException();

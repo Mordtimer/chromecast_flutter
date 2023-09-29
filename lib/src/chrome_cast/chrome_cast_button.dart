@@ -102,7 +102,7 @@ class ChromeCastButton extends StatelessWidget {
           .onRequestFailed(id: id)
           .listen((event) => onRequestFailed!(event.error));
     }
-    if (onRequestFailed != null) {
+    if (onMediaItemEvent != null) {
       _chromeCastPlatform
           .onMediaItemEvent(id: id)
           .listen((event) => onMediaItemEvent?.call(event));

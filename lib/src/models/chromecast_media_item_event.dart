@@ -1,4 +1,4 @@
-import '../chrome_cast/chrome_cast_event.dart';
+import 'chromecast_event.dart';
 
 class CastMediaItemEvent extends ChromeCastEvent {
   final bool isPlaying;
@@ -7,7 +7,7 @@ class CastMediaItemEvent extends ChromeCastEvent {
   final int? index;
   final double volume;
   final int position;
-  final double progress;
+  final double duration;
 
   CastMediaItemEvent({
     required int id,
@@ -17,7 +17,7 @@ class CastMediaItemEvent extends ChromeCastEvent {
     required this.index,
     required this.volume,
     required this.position,
-    required this.progress,
+    required this.duration,
   }) : super(id);
 
   Map<String, dynamic> toJson() => <String, dynamic>{
@@ -28,6 +28,6 @@ class CastMediaItemEvent extends ChromeCastEvent {
         'index': index,
         'volume': volume,
         'position': position,
-        'progress': progress,
+        'duration': duration,
       };
 }

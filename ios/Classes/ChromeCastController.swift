@@ -15,6 +15,10 @@ class ChromeCastController: NSObject, FlutterPlatformView {
     private let channel: FlutterMethodChannel
     private let chromeCastButton: GCKUICastButton
     private let sessionManager = GCKCastContext.sharedInstance().sessionManager
+    private var remoteMediaClient : GCKRemoteMediaClient? {
+            get {return sessionManager.currentCastSession?.remoteMediaClient}
+        }
+
 
     // MARK: - Init
 
@@ -131,6 +135,19 @@ class ChromeCastController: NSObject, FlutterPlatformView {
             result(nil)
         case "chromeCast#position":
             result(position())
+        case "chromeCast#isBuffering":
+            result(isBuffering())
+            break
+        case "chromeCast#getMediaInfo":
+            result(getMediaInfo())
+            break
+        case "chromeCast#position":
+            result(position())
+        case "chromeCast#disconnect":
+            disconnect()
+            result(nil)
+
+
         default:
             result(nil)
             break
@@ -238,7 +255,7 @@ class ChromeCastController: NSObject, FlutterPlatformView {
         //queueLoadOptions.repeatMode = GCKMediaRepeatMode.all
         
         
-        if let request = sessionManager.currentCastSession?.remoteMediaClient?.queueLoad(queueMediaItemsList, with: queueLoadOptions){
+        if let request = remoteMediaClient?.queueLoad(queueMediaItemsList, with: queueLoadOptions){
             request.delegate = self
         }
     }
@@ -260,13 +277,13 @@ class ChromeCastController: NSObject, FlutterPlatformView {
 //    }
 
     private func play() {
-        if let request = sessionManager.currentCastSession?.remoteMediaClient?.play() {
+        if let request = remoteMediaClient?.play() {
             request.delegate = self
         }
     }
 
     private func pause() {
-        if let request = sessionManager.currentCastSession?.remoteMediaClient?.pause() {
+        if let request = remoteMediaClient?.pause() {
             request.delegate = self
         }
     }
@@ -281,19 +298,19 @@ class ChromeCastController: NSObject, FlutterPlatformView {
         let seekOptions = GCKMediaSeekOptions()
         seekOptions.relative = relative
         seekOptions.interval = interval
-        if let request = sessionManager.currentCastSession?.remoteMediaClient?.seek(with: seekOptions) {
+        if let request = remoteMediaClient?.seek(with: seekOptions) {
             request.delegate = self
         }
     }
 
     private func stop() {
-        if let request = sessionManager.currentCastSession?.remoteMediaClient?.stop() {
+        if let request = remoteMediaClient?.stop() {
             request.delegate = self
         }
     }
 
     private func getMediaInfo() -> [String: String]? {
-       return  mediaInfoToMap(_mediaInfo: sessionManager.currentCastSession?.remoteMediaClient?.mediaStatus?.mediaInformation)
+       return  mediaInfoToMap(_mediaInfo: remoteMediaClient?.mediaStatus?.mediaInformation)
     }
 
     private func mediaInfoToMap(_mediaInfo: GCKMediaInformation?) -> [String: String]? {
@@ -324,11 +341,11 @@ class ChromeCastController: NSObject, FlutterPlatformView {
         }
 
     private func isConnected() -> Bool {
-        return sessionManager.currentCastSession?.remoteMediaClient?.connected ?? false
+        return remoteMediaClient?.connected ?? false
     }
 
     private func isPlaying() -> Bool {
-        return sessionManager.currentCastSession?.remoteMediaClient?.mediaStatus?.playerState == GCKMediaPlayerState.playing
+        return remoteMediaClient?.mediaStatus?.playerState == GCKMediaPlayerState.playing
     }
 
     private func addSessionListener() {
@@ -338,14 +355,41 @@ class ChromeCastController: NSObject, FlutterPlatformView {
     private func removeSessionListener() {
         sessionManager.remove(self)
     }
+    
+    private func disconnect() {
+        sessionManager.endSessionAndStopCasting(true)
+    }
 
     private func position() -> Int {        
-        return Int(sessionManager.currentCastSession?.remoteMediaClient?.approximateStreamPosition() ?? 0) * 1000
+        return Int(remoteMediaClient?.approximateStreamPosition() ?? 0) * 1000
     }
 
     private func duration() -> Int {
-            return Int(sessionManager.currentCastSession?.remoteMediaClient?.mediaStatus?.mediaInformation?.streamDuration ?? 0) * 1000
+            return Int(remoteMediaClient?.mediaStatus?.mediaInformation?.streamDuration ?? 0) * 1000
     }
+    
+    private func isBuffering() -> Bool {
+            return remoteMediaClient?.mediaStatus?.playerState == GCKMediaPlayerState.buffering
+        }
+        
+        private func isPaused() -> Bool {
+            return remoteMediaClient?.mediaStatus?.playerState == GCKMediaPlayerState.paused
+        }
+        
+        private func index() -> Int? {
+            guard let itemId =  remoteMediaClient?.mediaStatus?.currentItemID
+            else {
+                return nil
+            }
+            
+            let index = remoteMediaClient?.mediaQueue.indexOfItem(withID: itemId)
+            return index
+        }
+        
+        private func volume() -> Float? {
+            return remoteMediaClient?.mediaStatus?.volume ?? 1.0
+        }
+
 
 }
 
@@ -377,17 +421,15 @@ extension ChromeCastController: GCKRequestDelegate {
 // MARK: - GCKRemoteMediaClientListener
 extension ChromeCastController : GCKRemoteMediaClientListener {
     func remoteMediaClient(_ client: GCKRemoteMediaClient, didUpdate mediaStatus: GCKMediaStatus?) {
-        let playerStatus: GCKMediaPlayerState = mediaStatus?.playerState ?? GCKMediaPlayerState.unknown
-        var retCode = 4;
-        if (playerStatus == GCKMediaPlayerState.playing) {
-            retCode = 1
-        } else if (playerStatus == GCKMediaPlayerState.buffering) {
-            retCode = 0
-        } else if (playerStatus == GCKMediaPlayerState.idle && mediaStatus?.idleReason == GCKMediaPlayerIdleReason.finished) {
-            retCode = 2
-        }else if (playerStatus == GCKMediaPlayerState.paused) {
-          retCode = 3;
-        }
-        channel.invokeMethod("chromeCast#didPlayerStatusUpdated", arguments: retCode)
+        let returnValue = [
+            "isPlaying" : isPlaying(),
+            "isPaused" : isPaused(),
+            "isBuffering" : isBuffering(),
+            "index" : index(),
+            "volume" : volume(),
+            "position" : position(),
+            "progress" : Double(position()) / Double(duration())
+        ] as [String : Any?]
+        channel.invokeMethod("chromeCast#mediaItemEvent", arguments: returnValue)
     }
 }

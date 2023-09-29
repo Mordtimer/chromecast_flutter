@@ -30,15 +30,6 @@ class RequestDidCompleteEvent extends ChromeCastEvent {
   RequestDidCompleteEvent(int id) : super(id);
 }
 
-/// An event fired when a player status of a [id] updated.
-class PlayerStatusDidUpdatedEvent extends ChromeCastEvent {
-  /// The status code.
-  final int status;
-
-  /// Build a PlayerStatusDidUpdatedEvent Event triggered from the button represented by `id`.
-  PlayerStatusDidUpdatedEvent(int id, this.status) : super(id);
-}
-
 /// An event fired when a request of a [id] failed.
 class RequestDidFailEvent extends ChromeCastEvent {
   /// The error message.

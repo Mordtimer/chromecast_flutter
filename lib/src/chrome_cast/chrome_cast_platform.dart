@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
-import '../models/cast_media_item_event.dart';
+import '../models/chromecast_event.dart';
+import '../models/chromecast_media_item_event.dart';
 import '../models/chromecast_queue_model.dart';
-import 'chrome_cast_event.dart';
 import 'method_channel_chrome_cast.dart';
 
 /// The interface that platform-specific implementations of `flutter_cast_video` must extend.

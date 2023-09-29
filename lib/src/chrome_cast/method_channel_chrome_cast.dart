@@ -7,7 +7,7 @@ import 'package:flutter_cast_video/src/chrome_cast/chrome_cast_event.dart';
 import 'package:flutter_cast_video/src/chrome_cast/chrome_cast_platform.dart';
 import 'package:stream_transform/stream_transform.dart';
 
-import 'chromecast_queue_model.dart';
+import '../models/chromecast_queue_model.dart';
 
 /// An implementation of [ChromeCastPlatform] that uses [MethodChannel] to communicate with the native code.
 class MethodChannelChromeCast extends ChromeCastPlatform {

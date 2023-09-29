@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:flutter_cast_video/src/chrome_cast/chrome_cast_event.dart';
-import 'package:flutter_cast_video/src/chrome_cast/method_channel_chrome_cast.dart';
 
-import 'chromecast_queue_model.dart';
+import '../models/cast_media_item_event.dart';
+import '../models/chromecast_queue_model.dart';
+import 'chrome_cast_event.dart';
+import 'method_channel_chrome_cast.dart';
 
 /// The interface that platform-specific implementations of `flutter_cast_video` must extend.
 abstract class ChromeCastPlatform {
@@ -52,34 +53,31 @@ abstract class ChromeCastPlatform {
     throw UnimplementedError('onSessionEnded() has not been implemented.');
   }
 
-  /// Player status updated.
-  Stream<PlayerStatusDidUpdatedEvent> onPlayerStatusUpdated({required int id}) {
-    throw UnimplementedError('onPlayerStatusUpdated() has not been implemented.');
-  }
-
   /// Load a new media by providing an [url].
   Future<void> loadMedia(
-    String url, 
-    String title, 
-    String subtitle, 
+    String url,
+    String title,
+    String subtitle,
     String image, {
-    bool? live,  
+    bool? live,
     required int id,
   }) {
     throw UnimplementedError('loadMedia() has not been implemented.');
-  }  
-  
+  }
+
   /// Load a new media items queue.
-  Future<void> loadQueueMedia(
-    ChromecastQueueModel queue,
-    {required int id}
-  ) {
+  Future<void> loadQueueMedia(ChromecastQueueModel queue, {required int id}) {
     throw UnimplementedError('loadMedia() has not been implemented.');
   }
 
   /// Plays the video playback.
   Future<void> play({required int id}) {
     throw UnimplementedError('play() has not been implemented.');
+  }
+
+  /// Event from chromecast
+  Stream<CastMediaItemEvent> onMediaItemEvent({required int id}) {
+    throw UnimplementedError('onMediaItemEvent() has not been implemented.');
   }
 
   /// Pauses the video playback.
@@ -100,7 +98,7 @@ abstract class ChromeCastPlatform {
   }
 
   /// Get current MediaInfo
-  Future<Map<dynamic,dynamic>?> getMediaInfo({required int id}) {
+  Future<Map<dynamic, dynamic>?> getMediaInfo({required int id}) {
     throw UnimplementedError('getVolume() has not been implemented.');
   }
 
@@ -123,7 +121,6 @@ abstract class ChromeCastPlatform {
   Future<void> endSession({required int id}) {
     throw UnimplementedError('seek() has not been implemented.');
   }
-
 
   /// Returns `true` when a cast session is playing, `false` otherwise.
   Future<bool?> isPlaying({required int id}) {

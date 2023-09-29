@@ -8,8 +8,9 @@ typedef OnButtonCreated = void Function(ChromeCastController controller);
 
 typedef OnPlayerStatusUpdated = void Function(int statusCode);
 
-/// Callback method for when a request has failed.
 typedef void OnRequestFailed(String? error);
+
+typedef void OnMediaItemEvent(CastMediaItemEvent event);
 
 /// Widget that displays the ChromeCast button.
 class ChromeCastButton extends StatelessWidget {
@@ -23,7 +24,8 @@ class ChromeCastButton extends StatelessWidget {
     this.onSessionEnded,
     this.onRequestCompleted,
     this.onRequestFailed,
-    this.onPlayerStatusUpdated
+    //this.onPlayerStatusUpdated,
+    this.onMediaItemEvent,
   })  : assert(
             defaultTargetPlatform == TargetPlatform.iOS ||
                 defaultTargetPlatform == TargetPlatform.android,
@@ -54,8 +56,11 @@ class ChromeCastButton extends StatelessWidget {
   /// Called when a cast request has failed.
   final OnRequestFailed? onRequestFailed;
 
-  /// Called when player status updated
-  final OnPlayerStatusUpdated? onPlayerStatusUpdated;
+  // /// Called when player status updated
+  // final OnPlayerStatusUpdated? onPlayerStatusUpdated;
+
+  ///
+  final OnMediaItemEvent? onMediaItemEvent;
 
   @override
   Widget build(BuildContext context) {
@@ -97,10 +102,10 @@ class ChromeCastButton extends StatelessWidget {
           .onRequestFailed(id: id)
           .listen((event) => onRequestFailed!(event.error));
     }
-    if (onPlayerStatusUpdated != null) {
+    if (onRequestFailed != null) {
       _chromeCastPlatform
-          .onPlayerStatusUpdated(id: id)
-          .listen((event) => onPlayerStatusUpdated!(event.status));
+          .onMediaItemEvent(id: id)
+          .listen((event) => onMediaItemEvent?.call(event));
     }
   }
 }

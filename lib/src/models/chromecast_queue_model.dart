@@ -1,4 +1,4 @@
-import 'package:flutter_cast_video/src/chrome_cast/chromecast_media_item_model.dart';
+import 'package:flutter_cast_video/src/models/chromecast_media_item_model.dart';
 
 class ChromecastQueueModel {
   final List<ChromecastMediaItemModel> queue;

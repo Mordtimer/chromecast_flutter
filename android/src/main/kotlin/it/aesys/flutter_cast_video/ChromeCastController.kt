@@ -1,5 +1,6 @@
 package it.aesys.flutter_cast_video
 
+import android.annotation.SuppressLint
 import android.content.Context
 import android.net.Uri
 import android.view.ContextThemeWrapper
@@ -28,6 +29,9 @@ class ChromeCastController(
     private val chromeCastButton =
         MediaRouteButton(ContextThemeWrapper(context, R.style.ChromecastCustomStyle))
     private val sessionManager = CastContext.getSharedInstance()?.sessionManager
+    private val remoteMediaClient get() = sessionManager?.currentCastSession?.remoteMediaClient
+    private val progressListenerInterval = 100L
+
 
     init {
         CastButtonFactory.setUpMediaRouteButton(context as Context, chromeCastButton)
@@ -66,6 +70,45 @@ class ChromeCastController(
         }
     }
 
+    private fun buildMediaInfo(args: Map<*, *>): MediaInfo {
+        val url = args["url"] as String
+        val imageUrl = args["imageUrl"] as String?
+        val album = args["album"] as String
+        val title = args["title"] as String
+
+        val mediaType = when (args["type"] as Int) {
+            0 -> MediaMetadata.MEDIA_TYPE_MUSIC_TRACK
+            1 -> MediaMetadata.MEDIA_TYPE_MOVIE
+            else -> throw Exception("Undefined media type.")
+        }
+
+        val metadata = MediaMetadata(mediaType);
+        metadata.putString(MediaMetadata.KEY_ALBUM_TITLE, album)
+        metadata.putString(MediaMetadata.KEY_ARTIST, title)
+
+        if (imageUrl != null) {
+            metadata.addImage(WebImage(Uri.parse(imageUrl)));
+        }
+
+        return MediaInfo.Builder(url).setMetadata(metadata).build()
+    }
+
+
+    private val progressListener = RemoteMediaClient.ProgressListener { progressMs, durationMs ->
+        channel.invokeMethod(
+            "chromeCast#mediaItemEvent",
+            mapOf(
+                "isPlaying" to isPlaying(),
+                "isPaused" to isPaused(),
+                "isBuffering" to isBuffering(),
+                "index" to index(),
+                "volume" to volume(),
+                "position" to progressMs,
+                "progress" to progressMs.toDouble() / durationMs.toDouble()
+            )
+        )
+    }
+
     private fun play() {
         val request = sessionManager?.currentCastSession?.remoteMediaClient?.play()
         request?.addStatusListener(this)
@@ -77,74 +120,103 @@ class ChromeCastController(
     }
 
     private fun loadMediaQueue(args: Any?) {
-        val items: MutableList<MediaQueueItem> = mutableListOf()
-        Log.d("LOADMEDIAQUEUE", "BEEEKA")
-        var position: Int = 0
-        var queueIndex: Int = 0
-
-
         if (args is Map<*, *>) {
-            val jsonList = args["queue"] as? List<*>
-            // Make sure that list have an proper type if null - just return end do nothing
-            val queue =
-                jsonList?.filterIsInstance<Map<*, *>>().takeIf { it?.size == jsonList?.size }
-                    ?: return
+            val children = args["children"] as ArrayList<Map<*, *>>
+            val initialIndex = args["initialIndex"] as Int
 
-            position = args["position"] as? Int ?: 0
-            queueIndex = args["queueIndex"] as? Int ?: 0
-
-            for (item in queue) {
-                val url = item["url"] as? String ?: ""
-                val title = item["title"] as? String ?: ""
-                val subtitle = item["subtitle"] as? String ?: ""
-                val imageUrl = item["image"] as? String ?: ""
-                val contentType = item["contentType"] as? String ?: "audio/mpeg"
-                val liveStream = item["live"] as? Boolean ?: false
-
-                val movieMetadata = MediaMetadata(MediaMetadata.MEDIA_TYPE_MOVIE)
-
-                val streamType =
-                    if (liveStream) MediaInfo.STREAM_TYPE_LIVE else MediaInfo.STREAM_TYPE_BUFFERED
-
-                movieMetadata.putString(MediaMetadata.KEY_TITLE, title)
-                movieMetadata.putString(MediaMetadata.KEY_SUBTITLE, subtitle)
-                movieMetadata.addImage(WebImage(Uri.parse(imageUrl)))
-
-                val mediaInfo = MediaInfo
-                    .Builder(url)
-                    .setStreamType(streamType)
-                    .setContentType(contentType)
-                    .setMetadata(movieMetadata)
-                    .build()
-                val queueItem: MediaQueueItem = MediaQueueItem.Builder(mediaInfo)
-                    .setAutoplay(true)
-                    .setPreloadTime(20.0)
-
-
-                    .build()
-
-                items.add(queueItem)
+            val repeatMode = when (args["repeatMode"] as Int) {
+                0 -> MediaStatus.REPEAT_MODE_REPEAT_OFF
+                1 -> MediaStatus.REPEAT_MODE_REPEAT_ALL
+                2 -> MediaStatus.REPEAT_MODE_REPEAT_SINGLE
+                3 -> MediaStatus.REPEAT_MODE_REPEAT_ALL_AND_SHUFFLE
+                else -> throw Exception("Undefined repeat mode.")
             }
+
+            val queue: ArrayList<MediaQueueItem> = arrayListOf()
+
+            for (item in children) {
+                val mediaInfo = buildMediaInfo(item)
+                queue.add(MediaQueueItem.Builder(mediaInfo).build())
+            }
+
+            val request =
+                remoteMediaClient?.queueLoad(queue.toTypedArray(), initialIndex, repeatMode, null);
+            request?.addStatusListener(this)
+
+            remoteMediaClient?.removeProgressListener(progressListener)
+            remoteMediaClient?.addProgressListener(progressListener, progressListenerInterval)
         }
-        Log.d("LOADMEDIAQUEUE", args.toString())
-        Log.d("LOADMEDIAQUEUE", items.toString())
-        Log.d("LOADMEDIAQUEUE POSITION", position.toString())
-        Log.d("LOADMEDIAQUEUE QUEUE INDEX", queueIndex.toString())
-        Log.d("LOADMEDIAQUEUE ARGS", args.toString())
-
-
-        val options = MediaLoadOptions.Builder().build()
-        val request =
-            sessionManager?.currentCastSession?.remoteMediaClient?.queueLoad(
-                items.toTypedArray(),
-                queueIndex,
-                MediaStatus.REPEAT_MODE_REPEAT_OFF,
-                position.toLong(),
-                options.customData ?: JSONObject()
-            )
-        request?.addStatusListener(this)
-
     }
+
+
+//        val items: MutableList<MediaQueueItem> = mutableListOf()
+//
+//        var position: Int = 0
+//        var queueIndex: Int = 0
+//
+//
+//        if (args is Map<*, *>) {
+//            val jsonList = args["queue"] as? List<*>
+//            // Make sure that list have an proper type if null - just return end do nothing
+//            val queue =
+//                jsonList?.filterIsInstance<Map<*, *>>().takeIf { it?.size == jsonList?.size }
+//                    ?: return
+//
+//            val mediaInfo = buildMediaInfo(args)
+//            val options = MediaLoadOptions.Builder().build()
+//            position = args["position"] as? Int ?: 0
+//            queueIndex = args["queueIndex"] as? Int ?: 0
+//
+//            for (item in queue) {
+//                val url = item["url"] as? String ?: ""
+//                val title = item["title"] as? String ?: ""
+//                val subtitle = item["subtitle"] as? String ?: ""
+//                val imageUrl = item["image"] as? String ?: ""
+//                val contentType = item["contentType"] as? String ?: "audio/mpeg"
+//                val liveStream = item["live"] as? Boolean ?: false
+//
+//                val movieMetadata = MediaMetadata(MediaMetadata.MEDIA_TYPE_MOVIE)
+//
+//                val streamType =
+//                    if (liveStream) MediaInfo.STREAM_TYPE_LIVE else MediaInfo.STREAM_TYPE_BUFFERED
+//
+//                movieMetadata.putString(MediaMetadata.KEY_TITLE, title)
+//                movieMetadata.putString(MediaMetadata.KEY_SUBTITLE, subtitle)
+//                movieMetadata.addImage(WebImage(Uri.parse(imageUrl)))
+//
+//                val mediaInfo = MediaInfo
+//                    .Builder(url)
+//                    .setStreamType(streamType)
+//                    .setContentType(contentType)
+//                    .setMetadata(movieMetadata)
+//                    .build()
+//                val queueItem: MediaQueueItem = MediaQueueItem.Builder(mediaInfo)
+//                    .setAutoplay(true)
+//                    .setPreloadTime(20.0)
+//
+//
+//                    .build()
+//
+//                items.add(queueItem)
+//            }
+//        }
+//        Log.d("LOADMEDIAQUEUE", args.toString())
+//        Log.d("LOADMEDIAQUEUE", items.toString())
+//        Log.d("LOADMEDIAQUEUE POSITION", position.toString())
+//        Log.d("LOADMEDIAQUEUE QUEUE INDEX", queueIndex.toString())
+//        Log.d("LOADMEDIAQUEUE ARGS", args.toString())
+//
+//
+//        val options = MediaLoadOptions.Builder().build()
+//        val request =
+//            sessionManager?.currentCastSession?.remoteMediaClient?.queueLoad(
+//                items.toTypedArray(),
+//                queueIndex,
+//                MediaStatus.REPEAT_MODE_REPEAT_OFF,
+//                position.toLong(),
+//                options.customData ?: JSONObject()
+//            )
+//        request?.addStatusListener(this)
 
 
     private fun seek(args: Any?) {
@@ -209,6 +281,29 @@ class ChromeCastController(
     private fun isPlaying() =
         sessionManager?.currentCastSession?.remoteMediaClient?.isPlaying ?: false
 
+    private fun isPaused() =
+        sessionManager?.currentCastSession?.remoteMediaClient?.isPaused ?: false
+
+    private fun isBuffering() =
+        sessionManager?.currentCastSession?.remoteMediaClient?.isBuffering ?: false
+
+    private fun volume() =
+        sessionManager?.currentCastSession?.remoteMediaClient?.mediaStatus?.streamVolume ?: 1.0
+
+
+    private fun index(): Int? {
+        var itemId = sessionManager?.currentCastSession?.remoteMediaClient?.currentItem?.itemId
+
+        return if (itemId != null) {
+            sessionManager?.currentCastSession?.remoteMediaClient?.mediaQueue?.indexOfItemWithId(
+                itemId
+            )
+        } else {
+            null
+        }
+    }
+
+
     private fun isConnected() = sessionManager?.currentCastSession?.isConnected ?: false
 
     private fun endSession() = sessionManager?.endCurrentSession(true)
@@ -260,7 +355,7 @@ class ChromeCastController(
 
     }
 
-    // Flutter methods handling
+// Flutter methods handling
 
     override fun onMethodCall(call: MethodCall, result: MethodChannel.Result) {
         when (call.method) {
@@ -314,7 +409,7 @@ class ChromeCastController(
         }
     }
 
-    // SessionManagerListener
+// SessionManagerListener
 
     override fun onSessionStarted(p0: Session, p1: String) {
         if (p0 is CastSession) {
@@ -355,7 +450,7 @@ class ChromeCastController(
 
     }
 
-    // PendingResult.StatusListener
+// PendingResult.StatusListener
 
     override fun onComplete(status: Status) {
         if (status.isSuccess) {

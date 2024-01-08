@@ -20,7 +20,7 @@ import org.json.JSONObject
 
 class ChromeCastController(
     messenger: BinaryMessenger,
-    viewId: Int,
+    viewId: Int, 
     context: Context?
 ) : PlatformView, MethodChannel.MethodCallHandler, SessionManagerListener<Session>,
     PendingResult.StatusListener {
@@ -223,10 +223,10 @@ class ChromeCastController(
     private fun endSession() = sessionManager?.endCurrentSession(true)
 
     private fun position() =
-        sessionManager?.currentCastSession?.remoteMediaClient?.approximateStreamPosition ?: 0
+        sessionManager?.currentCastSession?.remoteMediaClient?.approximateStreamPosition ?: 1
 
     private fun duration() =
-        sessionManager?.currentCastSession?.remoteMediaClient?.mediaInfo?.streamDuration ?: 0
+        sessionManager?.currentCastSession?.remoteMediaClient?.mediaInfo?.streamDuration ?: 1
 
     private fun addSessionListener() {
         sessionManager?.addSessionManagerListener(this)

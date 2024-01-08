@@ -361,11 +361,11 @@ class ChromeCastController: NSObject, FlutterPlatformView {
     }
 
     private func position() -> Int {        
-        return Int(remoteMediaClient?.approximateStreamPosition() ?? 0) * 1000
+        return Int(remoteMediaClient?.approximateStreamPosition() ?? 1) * 1000
     }
 
     private func duration() -> Int {
-            return Int(remoteMediaClient?.mediaStatus?.mediaInformation?.streamDuration ?? 0) * 1000
+            return Int(remoteMediaClient?.mediaStatus?.mediaInformation?.streamDuration ?? 1) * 1000
     }
     
     private func isBuffering() -> Bool {

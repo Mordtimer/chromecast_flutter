@@ -1,10 +1,3 @@
-//
-//  ChromeCastController.swift
-//  flutter_cast_video
-//
-//  Created by Alessio Valentini on 07/08/2020.
-//
-
 import Flutter
 import GoogleCast
 
@@ -259,22 +252,6 @@ class ChromeCastController: NSObject, FlutterPlatformView {
             request.delegate = self
         }
     }
-    
-//    private func loadMedia2(args: Any?) {
-//        guard
-//            let args = args as? [String: Any],
-//            let url = args["url"] as? String
-//            else {
-//                print("Invalid URL")
-//                return
-//        }
-//
-//         if let imageUrl = URL(string: url){
-//          let gckImage = GCKImage(url: imageUrl, width: 480, height: 360)
-//          sessionManager.currentCastSession?.mediaMetadata?.addImage(gckImage)
-//         }
-//
-//    }
 
     private func play() {
         if let request = remoteMediaClient?.play() {
@@ -332,9 +309,6 @@ class ChromeCastController: NSObject, FlutterPlatformView {
                                   }
 
                                }
-
-
-
                 }
             }
             return info;
@@ -428,7 +402,7 @@ extension ChromeCastController : GCKRemoteMediaClientListener {
             "index" : index(),
             "volume" : volume(),
             "position" : position(),
-            "progress" : Double(position()) / Double(duration())
+            "duration" : duration(),
         ] as [String : Any?]
         channel.invokeMethod("chromeCast#mediaItemEvent", arguments: returnValue)
     }

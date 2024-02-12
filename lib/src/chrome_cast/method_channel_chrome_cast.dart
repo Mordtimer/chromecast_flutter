@@ -30,10 +30,11 @@ class MethodChannelChromeCast extends ChromeCastPlatform {
 
   // Returns a filtered view of the events in the _controller, by id.
   Stream<ChromeCastEvent> _events(int? id) =>
-      _eventStreamController.stream.where((event) => event.id == id);
+      _eventStreamController.stream; //.where((event) => event.id == id);
 
   @override
   Stream<CastMediaItemEvent> onMediaItemEvent({int? id}) {
+    print('xd');
     return _events(id).whereType<CastMediaItemEvent>();
   }
 
@@ -187,7 +188,7 @@ class MethodChannelChromeCast extends ChromeCastPlatform {
             .add(RequestDidFailEvent(id, call.arguments['error']));
         break;
       case 'chromeCast#mediaItemEvent':
-        _eventStreamController.add(CastMediaItemEvent(
+        final castEvent = CastMediaItemEvent(
           id: id,
           isPlaying: call.arguments['isPlaying'],
           isPaused: call.arguments['isPaused'],
@@ -196,7 +197,8 @@ class MethodChannelChromeCast extends ChromeCastPlatform {
           volume: call.arguments['volume'],
           position: call.arguments['position'],
           duration: call.arguments['duration'],
-        ));
+        );
+        _eventStreamController.add(castEvent);
         break;
       default:
         throw MissingPluginException();

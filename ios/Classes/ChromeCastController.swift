@@ -339,7 +339,11 @@ class ChromeCastController: NSObject, FlutterPlatformView {
     }
 
     private func duration() -> Int {
-            return Int(remoteMediaClient?.mediaStatus?.mediaInformation?.streamDuration ?? 1) * 1000
+        var duration = remoteMediaClient?.mediaStatus?.mediaInformation?.streamDuration;
+        if(duration?.isInfinite ?? true || duration?.isNaN ?? true) {
+            return 1
+        }
+        return Int(duration ?? 1) * 1000
     }
     
     private func isBuffering() -> Bool {
@@ -394,6 +398,8 @@ extension ChromeCastController: GCKRequestDelegate {
 
 // MARK: - GCKRemoteMediaClientListener
 extension ChromeCastController : GCKRemoteMediaClientListener {
+        
+    
     func remoteMediaClient(_ client: GCKRemoteMediaClient, didUpdate mediaStatus: GCKMediaStatus?) {
         let returnValue = [
             "isPlaying" : isPlaying(),

@@ -173,35 +173,39 @@ class MethodChannelChromeCast extends ChromeCastPlatform {
   }
 
   Future<dynamic> _handleMethodCall(MethodCall call, int id) async {
-    switch (call.method) {
-      case 'chromeCast#didStartSession':
-        _eventStreamController.add(SessionStartedEvent(id));
-        break;
-      case 'chromeCast#didEndSession':
-        _eventStreamController.add(SessionEndedEvent(id));
-        break;
-      case 'chromeCast#requestDidComplete':
-        _eventStreamController.add(RequestDidCompleteEvent(id));
-        break;
-      case 'chromeCast#requestDidFail':
-        _eventStreamController
-            .add(RequestDidFailEvent(id, call.arguments['error']));
-        break;
-      case 'chromeCast#mediaItemEvent':
-        final castEvent = CastMediaItemEvent(
-          id: id,
-          isPlaying: call.arguments['isPlaying'],
-          isPaused: call.arguments['isPaused'],
-          isBuffering: call.arguments['isBuffering'],
-          index: call.arguments['index'],
-          volume: call.arguments['volume'],
-          position: call.arguments['position'],
-          duration: call.arguments['duration'],
-        );
-        _eventStreamController.add(castEvent);
-        break;
-      default:
-        throw MissingPluginException();
+    try {
+      switch (call.method) {
+        case 'chromeCast#didStartSession':
+          _eventStreamController.add(SessionStartedEvent(id));
+          break;
+        case 'chromeCast#didEndSession':
+          _eventStreamController.add(SessionEndedEvent(id));
+          break;
+        case 'chromeCast#requestDidComplete':
+          _eventStreamController.add(RequestDidCompleteEvent(id));
+          break;
+        case 'chromeCast#requestDidFail':
+          _eventStreamController
+              .add(RequestDidFailEvent(id, call.arguments['error']));
+          break;
+        case 'chromeCast#mediaItemEvent':
+          final castEvent = CastMediaItemEvent(
+            id: id,
+            isPlaying: call.arguments['isPlaying'],
+            isPaused: call.arguments['isPaused'],
+            isBuffering: call.arguments['isBuffering'],
+            index: call.arguments['index'],
+            volume: call.arguments['volume'],
+            position: call.arguments['position'].toInt(),
+            duration: call.arguments['duration'].toDouble(),
+          );
+          _eventStreamController.add(castEvent);
+          break;
+        default:
+          throw MissingPluginException();
+      }
+    } catch (e) {
+      print(e);
     }
   }
 

@@ -34,7 +34,6 @@ class MethodChannelChromeCast extends ChromeCastPlatform {
 
   @override
   Stream<CastMediaItemEvent> onMediaItemEvent({int? id}) {
-    print('xd');
     return _events(id).whereType<CastMediaItemEvent>();
   }
 
